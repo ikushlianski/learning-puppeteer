@@ -1,0 +1,33 @@
+const puppeteer = require('puppeteer');
+
+const fetchTeams = async() => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  await page.goto(`https://www.uefa.com/memberassociations/uefarankings/club/#/yr/${new Date().getFullYear()}`);
+
+  await page.waitForSelector('.table--standings');
+
+  // Extract results from the page.
+  const teams = await page.evaluate(() => {
+    return [
+      ...document.querySelectorAll('.table--standings')[1]
+          .querySelectorAll('tbody tr')
+    ]
+      .map(el => el.children)
+      .slice(0, 128)
+      .map(team => {
+        return {
+          ranking: +team[0].innerText,
+          clubName: team[1].innerText,
+          nationCode: team[2].innerText,
+        }
+      });
+  });
+
+  await browser.close();
+
+  return teams;
+};
+
+module.exports = fetchTeams;
